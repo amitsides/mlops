@@ -1,0 +1,159 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ml-training-pipeline
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/your-org/ml-project.git'
+    targetRevision: HEAD
+    path: k8s
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: ml-pipeline
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  name: ml-training-workflow
+  namespace: ml-pipeline
+spec:
+  entrypoint: ml-pipeline
+  volumes:
+  - name: data-volume
+    persistentVolumeClaim:
+      claimName: ml-data-pvc
+  - name: model-volume
+    persistentVolumeClaim:
+      claimName: model-storage-pvc
+
+  templates:
+  - name: ml-pipeline
+    dag:
+      tasks:
+      - name: data-preparation
+        template: data-prep
+      - name: model-training
+        template: train
+        dependencies: [data-preparation]
+      - name: model-evaluation
+        template: evaluate
+        dependencies: [model-training]
+      - name: model-deployment
+        template: deploy
+        dependencies: [model-evaluation]
+        when: "{{tasks.model-evaluation.outputs.parameters.model-accuracy}} >= 0.85"
+
+  - name: data-prep
+    container:
+      image: your-registry/ml-data-prep:latest
+      command: ["python", "data_preparation.py"]
+      volumeMounts:
+      - name: data-volume
+        mountPath: /data
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+
+  - name: train
+    container:
+      image: your-registry/ml-training:latest
+      command: ["python", "train.py"]
+      volumeMounts:
+      - name: data-volume
+        mountPath: /data
+      - name: model-volume
+        mountPath: /models
+      env:
+      - name: LEARNING_RATE
+        value: "0.001"
+      - name: BATCH_SIZE
+        value: "32"
+      - name: EPOCHS
+        value: "50"
+      resources:
+        requests:
+          memory: "8Gi"
+          cpu: "4"
+          nvidia.com/gpu: "1"
+        limits:
+          memory: "16Gi"
+          cpu: "8"
+          nvidia.com/gpu: "1"
+
+  - name: evaluate
+    container:
+      image: your-registry/ml-evaluation:latest
+      command: ["python", "evaluate.py"]
+      volumeMounts:
+      - name: data-volume
+        mountPath: /data
+      - name: model-volume
+        mountPath: /models
+      outputs:
+        parameters:
+        - name: model-accuracy
+          valueFrom:
+            path: /models/metrics.json
+            jsonPath: '$.accuracy'
+      resources:
+        requests:
+          memory: "4Gi"
+          cpu: "2"
+        limits:
+          memory: "8Gi"
+          cpu: "4"
+
+  - name: deploy
+    container:
+      image: your-registry/ml-deploy:latest
+      command: ["python", "deploy.py"]
+      volumeMounts:
+      - name: model-volume
+        mountPath: /models
+      env:
+      - name: MODEL_SERVING_PORT
+        value: "8501"
+      - name: MODEL_NAME
+        value: "ml-model"
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+        limits:
+          memory: "4Gi"
+          cpu: "2"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-data-pvc
+  namespace: ml-pipeline
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: standard
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-storage-pvc
+  namespace: ml-pipeline
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard

@@ -1,0 +1,38 @@
+{
+    "model": {
+      "name": "my_neural_network",
+      "layers": [
+        {
+          "type": "dense",
+          "units": 128,
+          "activation": "relu"
+        },
+        {
+          "type": "dropout",
+          "rate": 0.2
+        },
+        {
+          "type": "dense",
+          "units": 64, 
+          "activation": "relu"
+        },
+        {
+          "type": "output",
+          "units": 10,
+          "activation": "softmax"
+        }
+      ]
+    },
+    "training": {
+      "epochs": 50,
+      "batch_size": 32,
+      "optimizer": "adam",
+      "loss": "categorical_crossentropy",
+      "metrics": ["accuracy"]
+    },
+    "data": {
+      "train_data": "data/train.csv",
+      "valid_data": "data/valid.csv",
+      "test_data": "data/test.csv"
+    }
+  }

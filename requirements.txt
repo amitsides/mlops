@@ -1,0 +1,13 @@
+numpy
+pandas
+scikit-learn
+tensorflow or pytorch
+keras
+matplotlib
+seaborn
+jupyter
+mlflow
+docker
+prometheus-client
+milvus-client
+wandb
