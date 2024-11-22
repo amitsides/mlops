@@ -11,3 +11,5 @@ docker
 prometheus-client
 milvus-client
 wandb
+langchain
+neo4j

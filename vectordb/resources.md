@@ -10,3 +10,6 @@ HelmChart for running VectorDB on k8s https://github.com/weaviate/weaviate
 https://github.com/weaviate/weaviate-helm/tree/master/weaviate/templates
 https://weaviate.io/developers/weaviate/installation/embedded
 https://milvus.io/docs/embeddings.md
+
+new vectordb
+https://turbopuffer.com/
