@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-deployment
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  replicas: 3
+  selector:
+    matchLabels:
+      app: llm
+  template:
+    metadata:
+      labels:
+        app: llm
+    spec:
+      serviceAccountName: llm-service
+      imagePullSecrets:
+            - name: registry-service-account
+      containers:
+        - name: llm
+          image: <image>
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "2048Mi"
+            requests:
+              cpu: "500m"
+              memory: "1024Mi"
+          env:
+            - name: QDRANT_URL
+              value: https://qdrant.qdrant.svc.cluster.local
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: qdrant-secret
+                  key: api-key
+            - name: LLM_URL
+              value: <URL>
+            - name: LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: llm-secret
+                  key: api-key

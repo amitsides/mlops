@@ -11,5 +11,5 @@ https://github.com/weaviate/weaviate-helm/tree/master/weaviate/templates
 https://weaviate.io/developers/weaviate/installation/embedded
 https://milvus.io/docs/embeddings.md
 
-new vectordb
+More Serverless DB
 https://turbopuffer.com/
